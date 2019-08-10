@@ -1,0 +1,9 @@
+> checkFoo ok
+
+> checkBar ok
+
+$ copy-file changes/foo.txt files/foo.txt
+
+> checkFoo great!
+
+> checkBar great!

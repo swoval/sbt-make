@@ -1,0 +1,16 @@
+> checkFoo foo
+
+$ copy-file changes/foo.in foo.in
+
+> checkFoo bar
+
+> checkPattern foo.md->foo bar.md->bar
+
+$copy-file changes/foo.txt pattern/in/foo.txt
+
+$copy-file changes/bar.txt pattern/in/bar.txt
+
+> checkPattern foo.md->newfoo bar.md->newbar
+
+> checkBlah newfoo
+

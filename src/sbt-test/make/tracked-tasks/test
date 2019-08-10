@@ -1,0 +1,36 @@
+> foo
+
+$ exists foo.txt
+
+> checkContent foo.txt bar1
+
+> checkContent count 1
+
+> foo
+
+> checkContent foo.txt bar1
+
+> checkContent count 1
+
+> set intTask := 2
+
+> foo
+
+> checkContent foo.txt bar2
+
+> checkContent count 2
+
+> foo
+
+> checkContent foo.txt bar2
+
+> checkContent count 2
+
+> clean
+
+> foo
+
+> checkContent foo.txt bar2
+
+> checkContent count 3
+

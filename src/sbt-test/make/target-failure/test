@@ -1,0 +1,11 @@
+> check good
+
+$copy-file changes/foo.in.fail foo.in.template
+
+-> check fail
+
+-> check fail
+
+$copy-file changes/foo.in.ok foo.in.template
+
+> check ok

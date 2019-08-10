@@ -1,0 +1,5 @@
+> make target/patterns/%.txt
+
+$ exists target/patterns/foo.txt
+
+$ exists target/patterns/bar.txt

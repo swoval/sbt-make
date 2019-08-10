@@ -1,0 +1,33 @@
+$ absent bar
+
+$ absent blah
+
+> make blah
+
+$ exists bar
+
+$ exists blah
+
+> checkContents blah barfoo
+
+$ copy-file changes/bar.txt bar.txt
+
+> make blah
+
+> checkContents blah blahblahblahfoo
+
+> setLastModified blah 12345678
+
+> make blah
+
+> checkLastModified blah 12345678
+
+$ delete foo.txt
+
+-> make blah
+
+$ copy-file changes/foo.txt foo.txt
+
+> make blah
+
+> checkContents blah blahblahblahfofofofof

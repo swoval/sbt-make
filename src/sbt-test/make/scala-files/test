@@ -1,0 +1,7 @@
+$ absent foo
+
+> make foo
+
+> checkFoo
+
+
