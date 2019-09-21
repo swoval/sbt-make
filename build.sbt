@@ -2,7 +2,7 @@ name := "sbt-make"
 
 organization := "com.swoval"
 
-version := "0.1.0-SNAPSHOT"
+version := "0.1.1-SNAPSHOT"
 
 homepage := Some(url("https://github.com/swoval/sbt-make"))
 scmInfo := Some(
