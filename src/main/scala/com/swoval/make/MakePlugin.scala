@@ -17,6 +17,9 @@ object MakePlugin extends AutoPlugin {
     matched((' ': Parser[Char]).+).examples(" ") ~> MakeParser.forState(state)
   }
   override lazy val projectSettings: Seq[Def.Setting[_]] = super.projectSettings ++ Seq(
+    MakeKeys.makeParallelism := java.lang.Runtime.getRuntime.availableProcessors * 2,
+  )
+  override lazy val globalSettings: Seq[Def.Setting[_]] = super.globalSettings ++ Seq(
     MakeKeys.make := {
       try makeParser.parsed()
       catch {
@@ -27,9 +30,7 @@ object MakePlugin extends AutoPlugin {
           }
       }
     },
-    MakeKeys.makeParallelism := java.lang.Runtime.getRuntime.availableProcessors * 2,
-  )
-  override lazy val globalSettings: Seq[Def.Setting[_]] = super.globalSettings ++ Seq(
+    aggregate in MakeKeys.make := false,
     onLoad := (state => OnLoad.injectMakeSettings((Global / onLoad).value(state))),
     InternalKeys.makeTaskKeysByTarget := Map.empty,
     InternalKeys.makeTaskKeysByTargetPattern := Map.empty,
