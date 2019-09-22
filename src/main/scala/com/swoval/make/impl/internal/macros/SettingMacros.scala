@@ -6,6 +6,7 @@ import java.util
 
 import com.swoval.make.{ AutomaticVariables, Dependency, Pattern }
 import sbt._
+import sbt.Keys.baseDirectory
 
 import scala.collection.JavaConverters._
 import scala.language.experimental.macros
@@ -63,11 +64,14 @@ object SettingMacros {
     val res = reify {
       (task.splice / InternalKeys.makeIncrementalSourceExpr := strippedE.splice) ::
         ((task.splice / InternalKeys.makeTask) :=
-          new DependentTask(taskKey.splice, impl.splice)(format.splice)) ::
-        ((task.splice / InternalKeys.makeDependencies) := {
-          val base = sbt.Keys.baseDirectory.value.toPath
-          deps.splice.map(_.resolve(base))
-        }) :: (task.splice := Def.task(???).value) :: taskDeps.splice
+          new DependentTask(
+            taskKey.splice in taskKey.splice.scope
+              .copy(project = sbt.Select(sbt.Keys.thisProjectRef.value)),
+            impl.splice
+          )(format.splice)) :: ((task.splice / InternalKeys.makeDependencies) := {
+        val base = baseDirectory.value.toPath
+        deps.splice.map(_.resolve(base))
+      }) :: (task.splice := Def.task(???).value) :: taskDeps.splice
     }
     c.Expr[Seq[Def.Setting[_]]](c.untypecheck(res.tree))
   }
@@ -114,12 +118,18 @@ object SettingMacros {
       reify((task.splice / InternalKeys.makeDependentTasks := dependentTasks.splice) :: Nil)
     val stripped = c.Expr[String](Literal(Constant(impl.toString)))
     val phonyE = c.Expr[Boolean](Literal(Constant(phony)))
+    val resolvedPath = reify {
+      path.splice match {
+        case p if p.isAbsolute => p
+        case p                 => sbt.Keys.baseDirectory.value.toPath.resolve(p)
+      }
+    }
     val res = reify {
       (task.splice / InternalKeys.makeIncrementalSourceExpr := stripped.splice) ::
-        (task.splice / InternalKeys.makeTarget := path.splice) ::
+        (task.splice / InternalKeys.makeTarget := resolvedPath.splice) ::
         (task.splice / InternalKeys.makePhony := phonyE.splice) ::
         ((task.splice / InternalKeys.makeDependencies) := {
-          val base = sbt.Keys.baseDirectory.value.toPath
+          val base = baseDirectory.value.toPath
           deps.splice.map(_.resolve(base))
         }) :: impl.splice :: taskDeps.splice
     }
@@ -133,7 +143,8 @@ object SettingMacros {
     val (wildcardsRemoved, deps) = stripWildcards[Any](c)(tree)
     (c.universe.reify((task.splice / InternalKeys.makeIncremental) := { implicit wildcards =>
       Files.createDirectories(wildcards.target.getParent)
-      Def.task[Any](wildcardsRemoved.splice) tag Settings.concurrency
+      val path = baseDirectory.value.toPath.relativize(wildcards.target).toString
+      Def.task[Any](wildcardsRemoved.splice)(t => t.named(path)) tag Settings.concurrency
     }), deps)
   }
   private def stripWildcards[T](
@@ -186,10 +197,19 @@ object SettingMacros {
           reify((task.splice / InternalKeys.makeDependentTasks := dependentTasks.splice) :: Nil)
         val stripped = c.Expr[String](Literal(Constant(impl.toString)))
         val res = reify {
-          ((task.splice / InternalKeys.makeTargetPattern) := targetPattern.splice) ::
-            ((task.splice / InternalKeys.makeSourcePattern) := sourcePattern.splice) ::
+          ((task.splice / InternalKeys.makeTargetPattern) := {
+            val base = baseDirectory.value.toPath
+            targetPattern.splice.resolve(base)
+          }) ::
+            ((task.splice / InternalKeys.makeSourcePattern) := {
+              val base = baseDirectory.value.toPath
+              sourcePattern.splice.resolve(base)
+            }) ::
             (task.splice / InternalKeys.makeIncrementalSourceExpr := stripped.splice) ::
-            ((task.splice / InternalKeys.makeDependencies) := { deps.splice }) ::
+            ((task.splice / InternalKeys.makeDependencies) := {
+              val base = baseDirectory.value.toPath
+              deps.splice.map(_.resolve(base))
+            }) ::
             impl.splice :: taskDeps.splice
         }
         c.Expr[Seq[Def.Setting[_]]](c.untypecheck(res.tree))
@@ -277,7 +297,7 @@ object SettingMacros {
       case q"$_(${pathTree: c.Tree }).$_" =>
         val name = c.Expr[Path](pathTree)
         reify {
-          val base: Path = sbt.Keys.baseDirectory.value.toPath
+          val base: Path = (baseDirectory in ThisProject).value.toPath
           val path: Path = name.splice
           val rebased: Path = if (path.isAbsolute) path else base.resolve(path)
           val map = InternalKeys.makeTaskKeysByTarget.value
@@ -293,7 +313,7 @@ object SettingMacros {
       case q"$_(${pathTree: c.Tree }).$_" =>
         val name = c.Expr[Pattern](pathTree)
         reify {
-          val base: Path = sbt.Keys.baseDirectory.value.toPath
+          val base: Path = (baseDirectory in ThisProject).value.toPath
           val pattern: Pattern = name.splice
           val rebased: Path = pattern.basePath
             .map { p =>
@@ -301,7 +321,7 @@ object SettingMacros {
             }
             .getOrElse(base)
           val newPattern = new Pattern(Some(rebased), pattern.prefix, pattern.suffix)
-          val map = InternalKeys.makeTaskKeysByTargetPattern.value
+          val map = (InternalKeys.makeTaskKeysByTargetPattern in ThisProject).value
           val key = map(newPattern)
           val extracted = sbt.Project.extract(sbt.Keys.state.value)
           extracted.runTask(key, sbt.Keys.state.value)._2
