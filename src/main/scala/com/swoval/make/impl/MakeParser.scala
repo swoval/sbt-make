@@ -140,7 +140,11 @@ object MakeParser {
     patterns.toSeq.collect {
       case (pat, k) if pat.basePath.fold(false)(_.startsWith(base)) =>
         pat.basePath
-          .map(p => new Pattern(Some(base.relativize(p)), pat.prefix, pat.suffix).toString)
+          .map(
+            p =>
+              new Pattern(Some(base.relativize(p)), pat.prefix, pat.suffix).toString
+                .replace('\\', '/')
+          )
           .get -> k
     } match {
       case Seq((p, k), tail @ _*) =>

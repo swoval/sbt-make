@@ -27,7 +27,7 @@ object StringInterpolatorMacros {
       val s = string.splice
       val names = s.replace('\\', '/').split('/')
       val prefix = names.head match {
-        case "" if !isWin && s.startsWith("/") => "/"
+        case "" if !isWin && s.startsWith("/") || s.startsWith(File.separator) => File.separator
         case h if isWin && h.endsWith(":")     => h + File.separator
         case h                                 => h
       }
@@ -43,7 +43,7 @@ object StringInterpolatorMacros {
       val base = names.headOption
         .filterNot(_.contains("%"))
         .map {
-          case "" if !isWin && s.startsWith("/") => "/"
+          case "" if s.startsWith("/") || s.startsWith(File.separator) => File.separator
           case h if isWin && h.endsWith(":")     => h + File.separator
           case h                                 => h
         }

@@ -15,9 +15,9 @@ package object test {
     }
   }
   implicit class StringOps(val s: String) extends AnyVal {
-    def +/(o: String): String = s"$s${File.separator}$o"
+    def +/(o: String): String = s"$s/$o"
   }
   object / {
-    def apply(s: String): String = File.separator + s
+    def apply(s: String): String = '/' + s
   }
 }

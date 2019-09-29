@@ -28,7 +28,7 @@ class MakeParserSpec extends FlatSpec {
     def completions(prefix: String): Set[(String, String)] =
       Parser.completions(parser, prefix, 0).get.map(c => (c.display, c.append))
     def completionsForPath(prefix: String, path: Path): Option[(String, String)] = {
-      dir.relativize(path).toString match {
+      dir.relativize(path).toString.replace('\\', '/') match {
         case s if s startsWith prefix => Some((s, s.drop(prefix.length)))
         case _                        => None
       }
