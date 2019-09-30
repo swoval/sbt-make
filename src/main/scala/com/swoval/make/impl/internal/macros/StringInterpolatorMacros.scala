@@ -27,9 +27,9 @@ object StringInterpolatorMacros {
       val s = string.splice
       val names = s.replace('\\', '/').split('/')
       val prefix = names.head match {
-        case "" if !isWin && s.startsWith("/") || s.startsWith(File.separator) => File.separator
-        case h if isWin && h.endsWith(":")                                     => h + File.separator
-        case h                                                                 => h
+        case "" if s.startsWith("/") || s.startsWith(File.separator) => File.separator
+        case h if isWin && h.endsWith(":")                           => h + File.separator
+        case h                                                       => h
       }
       names.tail.foldLeft(Paths.get(prefix))(_ resolve _)
     }
