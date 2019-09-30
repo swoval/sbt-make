@@ -6,12 +6,12 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import com.swoval.make.Dependency.{ PathDependency, PatternDependency }
 import com.swoval.make.MakeKeys.makePatternMappings
-import com.swoval.make.impl.InternalKeys.{ makeTaskKeysByTarget, _ }
+import com.swoval.make.impl.InternalKeys._
 import com.swoval.make.{ AutomaticVariables, Pattern }
 import sbt._
 import sbt.internal.util.AttributeKey
+import sbt.nio.FileStamp
 import sbt.nio.Keys._
-import sbt.nio.{ FileStamp, FileStamper }
 import sbt.util.Logger
 import sjsonnew.BasicJsonProtocol.StringJsonFormat
 import sjsonnew.JsonFormat
@@ -252,7 +252,7 @@ object OnLoad {
             } else {
               Def.task(target)
             }
-          }.value) :: (makeTaskKeysByTarget += target -> tk) :: Nil
+          }.value) :: (makeTaskKeysByTarget in projectScope(scope) += target -> tk) :: Nil
     }
   }
   private def singleFilePatternSettings(
@@ -283,7 +283,7 @@ object OnLoad {
               case Seq(Right((p, _))) => p
               case Seq(Left((p, i)))  => throw cleanup(p, i, sbt.Keys.streams.value.log)
             })
-          } :: (makeTaskKeysByTarget += target -> tk) :: Nil
+          } :: (makeTaskKeysByTarget in projectScope(scope) += target -> tk) :: Nil
       case None => Nil
     }
   }
@@ -405,7 +405,6 @@ object OnLoad {
             }.value
           } ::
             addTaskDefinition(tk := Def.taskDyn {
-
               val excludePathTasks = excludeTasks
                 .map {
                   case t if classOf[Path].isAssignableFrom(tk.key.manifest.runtimeClass) =>
@@ -429,9 +428,13 @@ object OnLoad {
             current.filterNot { case (p, _) => failed(p) }
           }) :: trigger(stampsKey / inputFileStamps, bulkIncrementalKey) ::
             (tk / fileInputs := sourcePattern.toGlob :: Nil) ::
-            (makeTaskKeysByTargetPattern += targetPattern -> tk) :: Nil
+            (makeTaskKeysByTargetPattern in projectScope(scope) += {
+              targetPattern -> tk
+            }) :: Nil
       }
   }
+  private def projectScope(scope: Scope): Scope =
+    scope.copy(config = Zero, task = Zero, extra = Zero)
   private def getScopes(
       extracted: Extracted
   ): (util.Set[Scope], util.Set[Scope], util.Set[Scope]) = {

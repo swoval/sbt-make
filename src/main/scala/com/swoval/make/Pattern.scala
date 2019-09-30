@@ -46,6 +46,13 @@ object Pattern {
       val base = p.basePath.map(_.toGlob / **).getOrElse(**)
       p.suffix.map(s => base / s"*$s").getOrElse(base)
     }
+    def resolve(path: Path): Pattern = {
+      p.basePath match {
+        case Some(b) =>
+          if (b.isAbsolute) p else new Pattern(Some(path.resolve(b)), p.prefix, p.suffix)
+        case _ => new Pattern(Some(path), p.prefix, p.suffix)
+      }
+    }
     def stem(path: Path): Option[Path] = {
       def relativeStem(relative: String): Option[Path] = {
         val prefix = p.prefix.getOrElse("")

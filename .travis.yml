@@ -1,0 +1,33 @@
+language: node_js
+
+env:
+  global:
+  - SBT_VER=1.3.2
+  - TRAVIS_JDK=adopt@1.8.0-222
+
+scala: 2.12.10
+
+script: /tmp/sbt/bin/sbt "Compile / scalafmtCheck; Test / scalafmtCheck; test; scripted"
+
+before_install:
+  - wget https://github.com/sbt/sbt/releases/download/v1.3.2/sbt-1.3.2.tgz
+  - tar -xvf sbt-$SBT_VER.tgz
+  - rm sbt-$SBT_VER.tgz
+  - mv sbt /tmp/sbt
+
+install:
+    - curl -sL https://github.com/shyiko/jabba/raw/master/install.sh | bash && . ~/.jabba/jabba.sh
+    - $JABBA_HOME/bin/jabba install $TRAVIS_JDK
+    - unset _JAVA_OPTIONS
+    - export JAVA_HOME="$JABBA_HOME/jdk/$TRAVIS_JDK" && export PATH="$JAVA_HOME/bin:$PATH" && java -Xmx32m -version
+
+cache:
+  directories:
+    - $HOME/.cache/coursier/v1
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/boot
+    - $HOME/.jabba
+
+before_cache:
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete
+  - find $HOME/.sbt        -name "*.lock"               -print -delete

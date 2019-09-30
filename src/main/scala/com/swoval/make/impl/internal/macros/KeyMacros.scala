@@ -1,12 +1,13 @@
 package com.swoval.make.impl.internal.macros
 
-import sbt.{ Def, SettingKey, TaskKey }
+import sbt.{ Def, Scope, SettingKey, TaskKey, ThisProject }
+import sbt.Scope.Global
 
 import scala.reflect.macros.blackbox
 
 object KeyMacros {
   def stringSettingImpl(c: blackbox.Context)(key: c.Expr[String]): c.Expr[String] =
-    c.universe.reify(SettingKey[String](lowerFirstChar(key.splice)).value)
+    c.universe.reify((SettingKey[String](lowerFirstChar(key.splice)) in Global).value)
   def settingImpl[T](c: blackbox.Context)(key: c.Expr[SettingKey[T]]): c.Expr[T] =
     c.universe.reify(key.splice.value)
   def taskImpl[T](c: blackbox.Context)(key: c.Expr[TaskKey[T]]): c.Expr[T] =
@@ -23,7 +24,7 @@ object KeyMacros {
       case q"$_(${k @ Literal(Constant(_: String)) }).:=[$_]({$_})  " =>
         val key = c.Expr[String](k)
         reify {
-          SettingKey[String](lowerFirstChar(key.splice), "", Int.MaxValue) := {
+          SettingKey[String](lowerFirstChar(key.splice), "", Int.MaxValue) in Global := {
             init.splice.toString
           }
         }

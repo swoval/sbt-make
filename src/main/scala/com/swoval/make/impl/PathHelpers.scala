@@ -7,6 +7,8 @@ import com.swoval.make.Pattern
 import sbt.internal.util.AttributeMap
 import sbt.{ Def, Scope, Select, Task, TaskKey, Zero }
 
+import scala.util.Properties
+
 object PathHelpers {
   private[this] val sanitizer = java.util.regex.Pattern.compile("[^a-zA-Z0-9_\\-]")
   def makeValue(k: TaskKey[Path]): Def.Initialize[Task[Path]] = Def.task(k.value)
@@ -22,7 +24,9 @@ object PathHelpers {
   }
 
   private def addToString[T](taskKey: TaskKey[T], scope: Scope, any: AnyRef): TaskKey[T] = {
-    val am = AttributeMap.empty.put(Scope.customShowString, any.toString)
+    val am =
+      if (!Properties.isWin) AttributeMap.empty.put(Scope.customShowString, any.toString)
+      else AttributeMap.empty
     taskKey in scope.copy(task = Zero, extra = Select(am))
   }
   def taskKey(path: Path): TaskKey[Path] = TaskKey[Path](pathToSettingName(path), "", Int.MaxValue)
@@ -39,6 +43,7 @@ object PathHelpers {
           .replace(".", "_dot_")
           .replace("%", "_percent_")
           .replace("*", "_star_")
+          .replace(":", "_colon_")
       )
       .replaceAll("x")
 }
