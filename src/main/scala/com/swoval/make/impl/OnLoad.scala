@@ -138,7 +138,8 @@ object OnLoad {
           val format: JsonFormat[T] = t.format.format
           val target = t.tk.key.label
           val stamps = PathHelpers.pathNameToSettingName(s"$target.__stamps")
-          val stampsKey = TaskKey[Seq[(Path, FileStamp)]](stamps, "", Int.MaxValue)
+          val proj = Global.copy(project = scope.project)
+          val stampsKey = TaskKey[Seq[(Path, FileStamp)]](stamps, "", Int.MaxValue) in proj
           val impl: AutomaticVariables => Def.Initialize[Task[T]] = t.impl
           val taskChanges = anyTaskChanges(extracted.get(scope / makeDependentTasks))
           val phony = extracted.get(scope / makePhony)
@@ -154,7 +155,11 @@ object OnLoad {
               .map(_.flatten)
               .value
           }) :: (stampsKey := {
-            val _ = tk.value
+            val _ = (
+              tk.value,
+              stampsKey.previous,
+              (scope / makeIncrementalSourceExpr).previous
+            )
             (scope / outputFileStamps).value
           }) :: (stampsKey := stampsKey.triggeredBy(tk).value) ::
             addTaskDefinition(tk := Def.taskDyn {
@@ -164,7 +169,7 @@ object OnLoad {
               val changes =
                 previousOutputs.map(outputChanges).getOrElse(FileChanges.noPrevious(outputDeps))
               val implChanges =
-                Previous.runtimeInEnclosingTask(scope / makeIncrementalSourceExpr).value match {
+                (scope / makeIncrementalSourceExpr).previous match {
                   case Some(s) => (scope / makeIncrementalSourceExpr).value != s
                   case _       => true
                 }
@@ -207,7 +212,8 @@ object OnLoad {
       case (target, (tk, scope)) =>
         val dependencies = extracted.get(scope / makeDependencies)
         val stamps = PathHelpers.pathNameToSettingName(s"$target.__stamps")
-        val stampsKey = TaskKey[Seq[(Path, FileStamp)]](stamps, "", Int.MaxValue)
+        val proj = Global.copy(project = scope.project)
+        val stampsKey = TaskKey[Seq[(Path, FileStamp)]](stamps, "", Int.MaxValue) in proj
         val impl = extracted.get(scope / makeIncremental)
         val taskChanges = anyTaskChanges(extracted.get(scope / makeDependentTasks))
         val phony = extracted.get(scope / makePhony)
@@ -227,7 +233,11 @@ object OnLoad {
             .map(_.flatten)
             .value
         }) :: (stampsKey := {
-          tk.value
+          val _ = (
+            tk.value,
+            stampsKey.previous,
+            (scope / makeIncrementalSourceExpr).previous
+          )
           (scope / outputFileStamps).value
         }) :: (stampsKey := stampsKey.triggeredBy(tk).value) ::
           addTaskDefinition(tk := Def.taskDyn {
@@ -237,7 +247,7 @@ object OnLoad {
             val changes =
               previousOutputs.map(outputChanges).getOrElse(FileChanges.noPrevious(outputDeps))
             val implChanges =
-              Previous.runtimeInEnclosingTask(scope / makeIncrementalSourceExpr).value match {
+              (scope / makeIncrementalSourceExpr).previous match {
                 case Some(s) => (scope / makeIncrementalSourceExpr).value != s
                 case _       => true
               }
@@ -297,7 +307,8 @@ object OnLoad {
       case (targetPattern, (sourcePattern, tk, scope)) =>
         val dependencies = extracted.get(scope / makeDependencies)
         val stamps = PathHelpers.pathNameToSettingName(s"$targetPattern.__stamps")
-        val stampsKey = TaskKey[Seq[(Path, FileStamp)]](stamps, "", Int.MaxValue)
+        val proj = Global.copy(project = scope.project)
+        val stampsKey = TaskKey[Seq[(Path, FileStamp)]](stamps, "", Int.MaxValue) in proj
         val incrementalKey = scope / bulkMakeIncremental
         val impl = extracted.get(scope / makeIncremental)
         val taskChanges = anyTaskChanges(extracted.get(scope / makeDependentTasks))
@@ -314,7 +325,12 @@ object OnLoad {
             .map(_.flatten)
             .value
         }) :: (stampsKey := {
-          val _ = tk.value
+          val _ = (
+            tk.value,
+            stampsKey.previous,
+            (stampsKey / inputFileStamps).previous,
+            (scope / makeIncrementalSourceExpr).previous
+          )
           (scope / outputFileStamps).value
         }) :: (stampsKey := stampsKey.triggeredBy(tk).value) ::
           (incrementalKey := { (sources: Seq[Path], stampKey: TaskKey[_]) =>
@@ -327,7 +343,7 @@ object OnLoad {
                   .map(outputChanges)
                   .getOrElse(FileChanges.noPrevious(outputDeps))
               val implChanges =
-                Previous.runtimeInEnclosingTask(scope / makeIncrementalSourceExpr).value match {
+                (scope / makeIncrementalSourceExpr).previous match {
                   case Some(s) => (scope / makeIncrementalSourceExpr).value != s
                   case _       => true
                 }
@@ -387,7 +403,8 @@ object OnLoad {
           val excludePaths = excludes.view.map(_._1).toSet
           val excludeTasks = excludes.map(_._2)
           val stamps = PathHelpers.pathNameToSettingName(s"$targetPattern.__stamps")
-          val stampsKey = TaskKey[Seq[(Path, FileStamp)]](stamps, "", Int.MaxValue)
+          val project = Global.copy(project = scope.project)
+          val stampsKey = TaskKey[Seq[(Path, FileStamp)]](stamps, "", Int.MaxValue) in project
           val incrementalKey = scope / bulkMakeIncremental
           val bulkIncrementalKeyName =
             PathHelpers.pathNameToSettingName(s"$targetPattern.__inc")
