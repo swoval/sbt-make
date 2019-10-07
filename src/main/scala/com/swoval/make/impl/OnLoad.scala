@@ -155,7 +155,11 @@ object OnLoad {
               .map(_.flatten)
               .value
           }) :: (stampsKey := {
-            val _ = tk.value
+            val _ = (
+              tk.value,
+              stampsKey.previous,
+              (scope / makeIncrementalSourceExpr).previous
+            )
             (scope / outputFileStamps).value
           }) :: (stampsKey := stampsKey.triggeredBy(tk).value) ::
             addTaskDefinition(tk := Def.taskDyn {
@@ -165,7 +169,7 @@ object OnLoad {
               val changes =
                 previousOutputs.map(outputChanges).getOrElse(FileChanges.noPrevious(outputDeps))
               val implChanges =
-                Previous.runtimeInEnclosingTask(scope / makeIncrementalSourceExpr).value match {
+                (scope / makeIncrementalSourceExpr).previous match {
                   case Some(s) => (scope / makeIncrementalSourceExpr).value != s
                   case _       => true
                 }
@@ -229,7 +233,11 @@ object OnLoad {
             .map(_.flatten)
             .value
         }) :: (stampsKey := {
-          tk.value
+          val _ = (
+            tk.value,
+            stampsKey.previous,
+            (scope / makeIncrementalSourceExpr).previous
+          )
           (scope / outputFileStamps).value
         }) :: (stampsKey := stampsKey.triggeredBy(tk).value) ::
           addTaskDefinition(tk := Def.taskDyn {
@@ -239,7 +247,7 @@ object OnLoad {
             val changes =
               previousOutputs.map(outputChanges).getOrElse(FileChanges.noPrevious(outputDeps))
             val implChanges =
-              Previous.runtimeInEnclosingTask(scope / makeIncrementalSourceExpr).value match {
+              (scope / makeIncrementalSourceExpr).previous match {
                 case Some(s) => (scope / makeIncrementalSourceExpr).value != s
                 case _       => true
               }
@@ -317,7 +325,12 @@ object OnLoad {
             .map(_.flatten)
             .value
         }) :: (stampsKey := {
-          val _ = tk.value
+          val _ = (
+            tk.value,
+            stampsKey.previous,
+            (stampsKey / inputFileStamps).previous,
+            (scope / makeIncrementalSourceExpr).previous
+          )
           (scope / outputFileStamps).value
         }) :: (stampsKey := stampsKey.triggeredBy(tk).value) ::
           (incrementalKey := { (sources: Seq[Path], stampKey: TaskKey[_]) =>
@@ -330,7 +343,7 @@ object OnLoad {
                   .map(outputChanges)
                   .getOrElse(FileChanges.noPrevious(outputDeps))
               val implChanges =
-                Previous.runtimeInEnclosingTask(scope / makeIncrementalSourceExpr).value match {
+                (scope / makeIncrementalSourceExpr).previous match {
                   case Some(s) => (scope / makeIncrementalSourceExpr).value != s
                   case _       => true
                 }
