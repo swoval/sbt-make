@@ -138,7 +138,8 @@ object OnLoad {
           val format: JsonFormat[T] = t.format.format
           val target = t.tk.key.label
           val stamps = PathHelpers.pathNameToSettingName(s"$target.__stamps")
-          val stampsKey = TaskKey[Seq[(Path, FileStamp)]](stamps, "", Int.MaxValue)
+          val proj = Global.copy(project = scope.project)
+          val stampsKey = TaskKey[Seq[(Path, FileStamp)]](stamps, "", Int.MaxValue) in proj
           val impl: AutomaticVariables => Def.Initialize[Task[T]] = t.impl
           val taskChanges = anyTaskChanges(extracted.get(scope / makeDependentTasks))
           val phony = extracted.get(scope / makePhony)
@@ -207,7 +208,8 @@ object OnLoad {
       case (target, (tk, scope)) =>
         val dependencies = extracted.get(scope / makeDependencies)
         val stamps = PathHelpers.pathNameToSettingName(s"$target.__stamps")
-        val stampsKey = TaskKey[Seq[(Path, FileStamp)]](stamps, "", Int.MaxValue)
+        val proj = Global.copy(project = scope.project)
+        val stampsKey = TaskKey[Seq[(Path, FileStamp)]](stamps, "", Int.MaxValue) in proj
         val impl = extracted.get(scope / makeIncremental)
         val taskChanges = anyTaskChanges(extracted.get(scope / makeDependentTasks))
         val phony = extracted.get(scope / makePhony)
@@ -297,7 +299,8 @@ object OnLoad {
       case (targetPattern, (sourcePattern, tk, scope)) =>
         val dependencies = extracted.get(scope / makeDependencies)
         val stamps = PathHelpers.pathNameToSettingName(s"$targetPattern.__stamps")
-        val stampsKey = TaskKey[Seq[(Path, FileStamp)]](stamps, "", Int.MaxValue)
+        val proj = Global.copy(project = scope.project)
+        val stampsKey = TaskKey[Seq[(Path, FileStamp)]](stamps, "", Int.MaxValue) in proj
         val incrementalKey = scope / bulkMakeIncremental
         val impl = extracted.get(scope / makeIncremental)
         val taskChanges = anyTaskChanges(extracted.get(scope / makeDependentTasks))
@@ -387,7 +390,8 @@ object OnLoad {
           val excludePaths = excludes.view.map(_._1).toSet
           val excludeTasks = excludes.map(_._2)
           val stamps = PathHelpers.pathNameToSettingName(s"$targetPattern.__stamps")
-          val stampsKey = TaskKey[Seq[(Path, FileStamp)]](stamps, "", Int.MaxValue)
+          val project = Global.copy(project = scope.project)
+          val stampsKey = TaskKey[Seq[(Path, FileStamp)]](stamps, "", Int.MaxValue) in project
           val incrementalKey = scope / bulkMakeIncremental
           val bulkIncrementalKeyName =
             PathHelpers.pathNameToSettingName(s"$targetPattern.__inc")
