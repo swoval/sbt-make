@@ -23,6 +23,7 @@ trait InternalKeys {
   val makeIncrementalSourceExpr = taskKey[String]("The string representation of the implementation")
   val makeIncremental =
     settingKey[AutomaticVariables => Def.Initialize[Task[Any]]]("Incremental task evaluation")
+  val makeNullImplementation = taskKey[Nothing]("null").withRank(Int.MaxValue)
   val bulkMakeIncremental =
     settingKey[(Seq[Path], TaskKey[_]) => Def.Initialize[Task[Seq[BulkResult]]]](
       "Bulk incremental task evaluation"

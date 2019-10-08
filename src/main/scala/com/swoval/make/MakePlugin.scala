@@ -36,5 +36,6 @@ object MakePlugin extends AutoPlugin {
     InternalKeys.makeTaskKeysByTargetPattern := Map.empty,
     InternalKeys.makePhony := false,
     MakeKeys.makePatternMappings := Map.empty,
+    InternalKeys.makeNullImplementation := Def.task(???).value,
   )
 }
