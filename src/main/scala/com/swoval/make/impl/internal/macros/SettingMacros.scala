@@ -23,7 +23,11 @@ object SettingMacros {
         val deps = c.Expr[Seq[Dependency]](depsE)
         val format = c.Expr[Format[R]](formatE)
         val incremental = makeTask(c)(f, taskKey, deps, format)
-        reify((taskKey.splice := Def.task(???).value) +: incremental.splice)
+        reify(
+          (taskKey.splice := InternalKeys.makeNullImplementation
+            .map(_ => ???)
+            .value) +: incremental.splice
+        )
       case _ =>
         c.abort(c.enclosingPosition, "Incompatible macro application")
     }
@@ -38,7 +42,11 @@ object SettingMacros {
         val deps = reify(Nil: Seq[Dependency])
         val format = c.Expr[Format[R]](formatE)
         val incremental = makeTask(c)(f, taskKey, deps, format)
-        reify((taskKey.splice := Def.task(???).value) +: incremental.splice)
+        reify(
+          (taskKey.splice := InternalKeys.makeNullImplementation
+            .map(_ => ???)
+            .value) +: incremental.splice
+        )
       case _ =>
         c.abort(c.enclosingPosition, "Incompatible macro application")
     }
@@ -71,7 +79,7 @@ object SettingMacros {
           )(format.splice)) :: ((task.splice / InternalKeys.makeDependencies) := {
         val base = baseDirectory.value.toPath
         deps.splice.map(_.resolve(base))
-      }) :: (task.splice := Def.task(???).value) :: taskDeps.splice
+      }) :: (task.splice := InternalKeys.makeNullImplementation.value) :: taskDeps.splice
     }
     c.Expr[Seq[Def.Setting[_]]](c.untypecheck(res.tree))
   }

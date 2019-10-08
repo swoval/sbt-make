@@ -93,7 +93,7 @@ object OnLoad {
             .put(makeInjectInProgress, injectInProgress)
             .addExitHook(() => injectInProgress.set(false))
           extracted.appendWithSession(
-            allExtra :+ (Keys.onLoadMessage := "Injected sbt-make settings."),
+            transform(extracted, allExtra) :+ (Keys.onLoadMessage := "Injected sbt-make settings."),
             updatedState
           )
         } else state
@@ -162,7 +162,7 @@ object OnLoad {
             )
             (scope / outputFileStamps).value
           }) :: (stampsKey := stampsKey.triggeredBy(tk).value) ::
-            addTaskDefinition(tk := Def.taskDyn {
+            addTaskDefinition(tk in proj := Def.taskDyn {
               val previousOutputs = stampsKey.previous
               val outputChanges = DiffStamps(_, (scope / outputFileStamps).value)
               val outputDeps = (scope / outputFileStamps).value.map(_._1)
@@ -240,7 +240,7 @@ object OnLoad {
           )
           (scope / outputFileStamps).value
         }) :: (stampsKey := stampsKey.triggeredBy(tk).value) ::
-          addTaskDefinition(tk := Def.taskDyn {
+          addTaskDefinition(tk in proj := Def.taskDyn {
             val previousOutputs = stampsKey.previous
             val outputChanges = DiffStamps(_, (scope / outputFileStamps).value)
             val outputDeps = (scope / outputFileStamps).value.map(_._1)
@@ -275,7 +275,8 @@ object OnLoad {
     patterns.get(targetPattern) match {
       case Some((sourcePattern, _, scope)) =>
         val stamps = PathHelpers.pathNameToSettingName(s"$target.__stamps")
-        val stampsKey = TaskKey[Seq[(Path, FileStamp)]](stamps, "", Int.MaxValue)
+        val proj = Global.copy(project = scope.project)
+        val stampsKey = TaskKey[Seq[(Path, FileStamp)]](stamps, "", Int.MaxValue) in proj
         val bulkIncrementalKey = scope / bulkMakeIncremental
         val f = patternMapping(extracted, scope, targetPattern, sourcePattern)
         addTaskDefinition(incrementalKey := Def.taskDyn {
@@ -289,7 +290,7 @@ object OnLoad {
         }) :: trigger(stampsKey / inputFileStamps, incrementalKey) ::
           (tk / fileInputs := sourcePattern.toGlob :: Nil) ::
           addTaskDefinition {
-            tk := (incrementalKey.value match {
+            tk in proj := (incrementalKey.value match {
               case Seq(Right((p, _))) => p
               case Seq(Left((p, i)))  => throw cleanup(p, i, sbt.Keys.streams.value.log)
             })
@@ -421,7 +422,7 @@ object OnLoad {
                 .flatMap(joinTasks(_).join.map(_.flatten))
             }.value
           } ::
-            addTaskDefinition(tk := Def.taskDyn {
+            addTaskDefinition(tk in project := Def.taskDyn {
               val excludePathTasks = excludeTasks
                 .map {
                   case t if classOf[Path].isAssignableFrom(tk.key.manifest.runtimeClass) =>
@@ -561,5 +562,26 @@ object OnLoad {
   private[make] class MakeException(val target: Path, cause: Throwable)
       extends Throwable(null, cause, true, false) {
     override def toString: String = ""
+  }
+  private def transform(
+      extracted: Extracted,
+      toInject: Seq[Def.Setting[_]]
+  ): Seq[Def.Setting[_]] = {
+    val defs = new util.HashMap[ScopedKey[_], java.util.List[Def.Setting[_]]]()
+    extracted.session.original.foreach { s =>
+      val list = new java.util.ArrayList[Def.Setting[_]]
+      if (!s.init.dependencies.exists(_.key == makeNullImplementation.key)) {
+        defs.putIfAbsent(s.key, list) match {
+          case null => list.add(s)
+          case l    => l.add(s)
+        }
+      }
+    }
+    toInject.flatMap { s =>
+      defs.get(s.key) match {
+        case null => s :: Nil
+        case l    => s +: l.asScala
+      }
+    }
   }
 }
