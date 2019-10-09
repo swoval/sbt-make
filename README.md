@@ -19,7 +19,7 @@ just scala and java files.
 
 sbt-make requires sbt version >= 1.3.0. Install by adding:
 ```
-addSbtPlugin("com.swoval" % "sbt-make" % "0.1.2")
+addSbtPlugin("com.swoval" % "sbt-make" % "0.1.3")
 ```
 to `project/plugins.sbt` (or any `*.sbt` file in the `project` directory).
 
