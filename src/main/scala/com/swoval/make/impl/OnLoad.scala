@@ -439,7 +439,9 @@ object OnLoad {
                   case Left((_, i))  => throw i
                 }
               }).join.flatMap(joinTasks(_).join.map(_.flatten))
-            }.value) :: (stampsKey / inputFileStamps := {
+            }.value) :: (tk in project := (tk in project)
+            .dependsOn(patterns.get(sourcePattern).map(_._2).toSeq: _*)
+            .value) :: (stampsKey / inputFileStamps := {
             val current = (tk / inputFileStamps).value
             val failed = bulkIncrementalKey.value.collect {
               case Left((p, _)) => p
