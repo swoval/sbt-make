@@ -2,7 +2,6 @@ package com.swoval.make
 
 import java.nio.file.Path
 
-import com.swoval.make.MakePlugin.autoImport._
 import org.scalatest.WordSpec
 import sbt.io.IO
 

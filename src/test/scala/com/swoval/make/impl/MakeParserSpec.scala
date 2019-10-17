@@ -9,13 +9,6 @@ import sbt.internal.util.complete.Parser
 import sbt.nio.file.syntax._
 
 class MakeParserSpec extends FlatSpec {
-  import com.swoval.make.MakePlugin.autoImport._
-  val x = sbt.taskKey[Int]("x")
-
-  p"foo".phony :- p"${"FOO"}/bar" build {
-    x.track
-  }
-
   "Parser" should "parse files" in withTempDir { dir =>
     val subdir = Files.createDirectories(dir / "subdir")
     val subfile1 = Files.createFile(subdir / "file1")
