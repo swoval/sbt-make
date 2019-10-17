@@ -411,14 +411,15 @@ object OnLoad {
             PathHelpers.pathNameToSettingName(s"$targetPattern.__inc")
           val bulkIncrementalKey =
             TaskKey[Seq[BulkResult]](bulkIncrementalKeyName, "", Int.MaxValue)
-          val explicitTasks = explicit.map(_._2).join.map(_.flatten)
+          val explicitTasks =
+            if (explicit.nonEmpty) explicit.map(_._2).join.map(_.flatten) :: Nil else Nil
           val explicitPaths = explicit.map(_._1).toSet ++ excludePaths
           addTaskDefinition {
             bulkIncrementalKey := Def.taskDyn {
               val filteredInputs = tk.inputFiles.flatMap { s =>
                 f(s).collect { case t if !explicitPaths(t) => s }
               }
-              Seq(explicitTasks, incrementalKey.value(filteredInputs, stampsKey)).join
+              (explicitTasks :+ incrementalKey.value(filteredInputs, stampsKey)).join
                 .flatMap(joinTasks(_).join.map(_.flatten))
             }.value
           } ::
