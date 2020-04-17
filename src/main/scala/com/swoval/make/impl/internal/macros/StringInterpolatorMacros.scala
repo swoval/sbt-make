@@ -47,9 +47,7 @@ object StringInterpolatorMacros {
           case h if isWin && h.endsWith(":")                           => h + File.separator
           case h                                                       => h
         }
-        .map { prefix =>
-          names.tail.dropRight(1).foldLeft(Paths.get(prefix))(_ resolve _)
-        }
+        .map { prefix => names.tail.dropRight(1).foldLeft(Paths.get(prefix))(_ resolve _) }
       val last = names.last
       val parts = last.split('%') match {
         case a if a.isEmpty => Array("")
