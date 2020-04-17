@@ -28,7 +28,7 @@ object AutomaticVariables {
 
   /**
    * This will get removed in a macro transformation but is so that, for example,
-   * [[Imports.`$^`]] can be expanded inside of a build block.
+   * Imports.`$^` can be expanded inside of a build block.
    *
    * @return nothing
    */

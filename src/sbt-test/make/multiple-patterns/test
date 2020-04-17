@@ -1,0 +1,3 @@
+> make %.out
+
+$ exists foo.out

@@ -411,23 +411,29 @@ object OnLoad {
             PathHelpers.pathNameToSettingName(s"$targetPattern.__inc")
           val bulkIncrementalKey =
             TaskKey[Seq[BulkResult]](bulkIncrementalKeyName, "", Int.MaxValue)
-          val explicitTasks = explicit.map(_._2).join.map(_.flatten)
+          val explicitTasks =
+            if (explicit.nonEmpty) explicit.map(_._2).join.map(_.flatten) :: Nil else Nil
           val explicitPaths = explicit.map(_._1).toSet ++ excludePaths
           addTaskDefinition {
             bulkIncrementalKey := Def.taskDyn {
               val filteredInputs = tk.inputFiles.flatMap { s =>
                 f(s).collect { case t if !explicitPaths(t) => s }
               }
-              Seq(explicitTasks, incrementalKey.value(filteredInputs, stampsKey)).join
+              (explicitTasks :+ incrementalKey.value(filteredInputs, stampsKey)).join
                 .flatMap(joinTasks(_).join.map(_.flatten))
             }.value
           } ::
             addTaskDefinition(tk in project := Def.taskDyn {
+              def isType[T](k: TaskKey[_])(implicit m: Manifest[T]): Boolean =
+                k.key.manifest.typeArguments match {
+                  case tpe :: Nil => m.runtimeClass.isAssignableFrom(tpe.runtimeClass)
+                  case _          => false
+                }
               val excludePathTasks = excludeTasks
                 .map {
-                  case t if classOf[Path].isAssignableFrom(tk.key.manifest.runtimeClass) =>
+                  case t if isType[Path](t) =>
                     t.asInstanceOf[TaskKey[Path]]
-                  case t if classOf[File].isAssignableFrom(tk.key.manifest.runtimeClass) =>
+                  case t if isType[File](t) =>
                     t.asInstanceOf[TaskKey[File]].map(_.toPath)
                 }
                 .join
@@ -438,7 +444,9 @@ object OnLoad {
                   case Left((_, i))  => throw i
                 }
               }).join.flatMap(joinTasks(_).join.map(_.flatten))
-            }.value) :: (stampsKey / inputFileStamps := {
+            }.value) :: (tk in project := (tk in project)
+            .dependsOn(patterns.get(sourcePattern).map(_._2).toSeq: _*)
+            .value) :: (stampsKey / inputFileStamps := {
             val current = (tk / inputFileStamps).value
             val failed = bulkIncrementalKey.value.collect {
               case Left((p, _)) => p

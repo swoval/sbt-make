@@ -1,0 +1,7 @@
+> make target/%.txt
+
+$ must-mirror target/foo.txt foo.md
+
+-$ must-mirror target/bar.txt bar.md
+
+> check
