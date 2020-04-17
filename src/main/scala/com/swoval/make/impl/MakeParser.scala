@@ -139,12 +139,10 @@ object MakeParser {
   ): Parser[(String, TaskKey[Seq[Path]])] = {
     patterns.toSeq.collect {
       case (pat, k) if pat.basePath.fold(false)(_.startsWith(base)) =>
-        pat.basePath match {
-          case Some(patBase) =>
-            val newBase = if (base != patBase) Some(base.relativize(patBase)) else None
-            val prefix = new Pattern(newBase, pat.prefix, pat.suffix).toString
-            prefix.replace('\\', '/') -> k
-        }
+        val patBase = pat.basePath.get
+        val newBase = if (base != patBase) Some(base.relativize(patBase)) else None
+        val prefix = new Pattern(newBase, pat.prefix, pat.suffix).toString
+        prefix.replace('\\', '/') -> k
     } match {
       case Seq((p, k), tail @ _*) =>
         tail.foldLeft(token(p).map(_ => p -> k)) {
