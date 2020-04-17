@@ -63,9 +63,7 @@ object SettingMacros {
     val number = c.Expr[Int](Literal(Constant(c.enclosingPosition.line)))
     val task = reify(TaskKey[Any](s"make__${name.splice}_${number.splice}", "", Int.MaxValue))
     val (stripped, dependentTasks) = stripWildcards[R](c)(f.tree)
-    val impl = reify({ implicit automatic: AutomaticVariables =>
-      Def.task(stripped.splice)
-    })
+    val impl = reify({ implicit automatic: AutomaticVariables => Def.task(stripped.splice) })
     val taskDeps =
       reify((task.splice / InternalKeys.makeDependentTasks := dependentTasks.splice) :: Nil)
     val strippedE = c.Expr[String](Literal(Constant(stripped.toString)))
@@ -324,9 +322,7 @@ object SettingMacros {
           val base: Path = (baseDirectory in ThisProject).value.toPath
           val pattern: Pattern = name.splice
           val rebased: Path = pattern.basePath
-            .map { p =>
-              if (p.isAbsolute) p else base.resolve(p)
-            }
+            .map { p => if (p.isAbsolute) p else base.resolve(p) }
             .getOrElse(base)
           val newPattern = new Pattern(Some(rebased), pattern.prefix, pattern.suffix)
           val map = (InternalKeys.makeTaskKeysByTargetPattern in ThisProject).value
