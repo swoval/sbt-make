@@ -1,1 +1,1 @@
-addSbtPlugin("com.swoval" % "sbt-make" % "0.1.3")
+addSbtPlugin("com.swoval" % "sbt-make" % "0.1.4")
