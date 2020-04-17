@@ -424,11 +424,16 @@ object OnLoad {
             }.value
           } ::
             addTaskDefinition(tk in project := Def.taskDyn {
+              def isType[T](k: TaskKey[_])(implicit m: Manifest[T]): Boolean =
+                k.key.manifest.typeArguments match {
+                  case tpe :: Nil => m.runtimeClass.isAssignableFrom(tpe.runtimeClass)
+                  case _          => false
+                }
               val excludePathTasks = excludeTasks
                 .map {
-                  case t if classOf[Path].isAssignableFrom(tk.key.manifest.runtimeClass) =>
+                  case t if isType[Path](t) =>
                     t.asInstanceOf[TaskKey[Path]]
-                  case t if classOf[File].isAssignableFrom(tk.key.manifest.runtimeClass) =>
+                  case t if isType[File](t) =>
                     t.asInstanceOf[TaskKey[File]].map(_.toPath)
                 }
                 .join
