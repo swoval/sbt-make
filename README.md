@@ -1,4 +1,5 @@
 ### sbt-make
+**It is a sad state of affairs that this feels necessary, but I ask that if you support or are planning to vote for the reelection of the 45th president of the United States of America, that you not use this plugin.**
 
 sbt-make allows sbt build and plugin authors to write tasks that transform
 project source files into output files. It extends the sbt task definition
